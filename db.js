@@ -1,6 +1,6 @@
 /**
- * db.js - שכבת הנתונים והרשאות ב-LocalStorage
- * מנהל את הרכבים, המשתמשים, ההזמנות והחיבור למערכת.
+ * db.js - שכבת הנתונים והרשאות ב-LocalStorage או ב-Supabase
+ * תומך בשני מצבים: מצב מקומי (Sandbox) ומצב ייצור (Supabase)
  */
 
 const STORAGE_KEYS = {
@@ -8,8 +8,34 @@ const STORAGE_KEYS = {
     USERS: 'cs_users',
     BOOKINGS: 'cs_bookings',
     CURRENT_USER: 'cs_current_user',
-    GOOGLE_CLIENT_ID: 'cs_google_client_id'
+    GOOGLE_CLIENT_ID: 'cs_google_client_id',
+    SUPABASE_URL: 'cs_supabase_url',
+    SUPABASE_KEY: 'cs_supabase_key'
 };
+
+// לקוח ה-Supabase הגלובלי
+let supabaseClient = null;
+
+function initSupabase() {
+    const url = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL);
+    const key = localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY);
+    
+    if (url && key && typeof supabase !== 'undefined') {
+        try {
+            supabaseClient = supabase.createClient(url, key);
+            window.supabaseClient = supabaseClient;
+            console.log('Supabase client initialized successfully.');
+        } catch (e) {
+            console.error('Failed to initialize Supabase client:', e);
+            supabaseClient = null;
+            window.supabaseClient = null;
+        }
+    } else {
+        supabaseClient = null;
+        window.supabaseClient = null;
+        console.log('Using local storage sandbox mode (Supabase credentials not configured).');
+    }
+}
 
 // פונקציות עזר כלליות ל-LocalStorage
 function getFromStorage(key, defaultValue) {
@@ -65,7 +91,7 @@ const DEFAULT_USERS = [
         name: 'ישראל ישראלי',
         picture: '',
         role: 'admin',
-        permissions: ['car-1', 'car-2', 'car-3'] // למנהל יש גישה להכל בכל מקרה
+        permissions: ['car-1', 'car-2', 'car-3']
     },
     {
         id: 'user-member1',
@@ -73,7 +99,7 @@ const DEFAULT_USERS = [
         name: 'רינה כהן',
         picture: '',
         role: 'member',
-        permissions: ['car-1', 'car-2', 'car-3'] // גישה לכל הרכבים
+        permissions: ['car-1', 'car-2', 'car-3']
     },
     {
         id: 'user-member2',
@@ -81,7 +107,7 @@ const DEFAULT_USERS = [
         name: 'משה לוי',
         picture: '',
         role: 'member',
-        permissions: ['car-2'] // גישה רק לטויוטה יאריס
+        permissions: ['car-2']
     },
     {
         id: 'user-guest',
@@ -89,11 +115,10 @@ const DEFAULT_USERS = [
         name: 'דנה אברהם',
         picture: '',
         role: 'member',
-        permissions: [] // ממתינה לאישור רכבים
+        permissions: []
     }
 ];
 
-// הזמנות בדיקה שיווצרו באופן דינמי לפי התאריך הנוכחי
 function getDefaultBookings() {
     const today = getTodayString(0);
     const tomorrow = getTodayString(1);
@@ -142,8 +167,8 @@ function getDefaultBookings() {
     ];
 }
 
-// אתחול מסד הנתונים
-function initDatabase() {
+// אתחול מסד הנתונים של LocalStorage
+function initLocalStorageDatabase() {
     if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
         saveToStorage(STORAGE_KEYS.VEHICLES, DEFAULT_VEHICLES);
     }
@@ -155,41 +180,8 @@ function initDatabase() {
     }
 }
 
-// הפעלת האתחול מיד
-initDatabase();
-
-// Ensure the primary admin exists (email: amitinbar111@gmail.com) and demote any other admins
-(function() {
-    const primaryAdminEmail = 'amitinbar111@gmail.com';
-    const users = DB.getUsers();
-
-    // Find if primary admin exists
-    let primaryAdmin = users.find(u => u.email.toLowerCase() === primaryAdminEmail.toLowerCase());
-
-    if (!primaryAdmin) {
-        // Create primary admin
-        primaryAdmin = DB.addUser({
-            email: primaryAdminEmail,
-            name: 'Amit Nabar',
-            role: 'admin'
-        });
-        console.log('Created primary admin user', primaryAdminEmail);
-    } else if (primaryAdmin.role !== 'admin') {
-        // Promote to admin if needed
-        DB.updateUserRoleAndPermissions(primaryAdmin.id, 'admin', DB.getVehicles().map(v => v.id));
-    }
-
-    // Demote any other admin users to member (remove their admin rights)
-    users.forEach(u => {
-        if (u.email.toLowerCase() !== primaryAdminEmail.toLowerCase() && u.role === 'admin') {
-            DB.updateUserRoleAndPermissions(u.id, 'member', []);
-        }
-    });
-})();
-
-// ייצוא פונקציות מסד הנתונים
-const DB = {
-    // --- רכבים (Vehicles) ---
+// שכבת סנכרון מקומית (Sync API Fallback)
+const DB_SyncFallback = {
     getVehicles() {
         return getFromStorage(STORAGE_KEYS.VEHICLES, []);
     },
@@ -209,7 +201,6 @@ const DB = {
             vehicle.id = 'car-' + Date.now();
             vehicles.push(vehicle);
             
-            // באופן אוטומטי, כשנוסף רכב חדש, ניתן למנהלים הרשאה אליו
             const users = this.getUsers();
             users.forEach(u => {
                 if (u.role === 'admin') {
@@ -224,15 +215,12 @@ const DB = {
     },
     
     deleteVehicle(id) {
-        // מחיקת הרכב
         const vehicles = this.getVehicles().filter(v => v.id !== id);
         saveToStorage(STORAGE_KEYS.VEHICLES, vehicles);
         
-        // מחיקת הזמנות עתידיות שקשורות לרכב זה
         const bookings = this.getBookings().filter(b => b.vehicleId !== id);
         saveToStorage(STORAGE_KEYS.BOOKINGS, bookings);
         
-        // מחיקת הרשאה לרכב זה אצל כל המשתמשים
         const users = this.getUsers();
         users.forEach(u => {
             if (u.permissions) {
@@ -242,7 +230,6 @@ const DB = {
         this.saveUsers(users);
     },
 
-    // --- משתמשים והרשאות (Users & Permissions) ---
     getUsers() {
         return getFromStorage(STORAGE_KEYS.USERS, []);
     },
@@ -267,7 +254,6 @@ const DB = {
             users[index].permissions = allowedVehicleIds;
             saveToStorage(STORAGE_KEYS.USERS, users);
             
-            // אם זה המשתמש המחובר כעת, נעדכן גם את הסשן שלו
             const currentUser = this.getCurrentUser();
             if (currentUser && currentUser.id === userId) {
                 currentUser.role = role;
@@ -305,30 +291,26 @@ const DB = {
         const users = this.getUsers().filter(u => u.id !== userId);
         this.saveUsers(users);
 
-        // מחיקת ההזמנות של המשתמש שנמחק
         const bookings = this.getBookings().filter(b => b.userId !== userId);
         saveToStorage(STORAGE_KEYS.BOOKINGS, bookings);
     },
     
-    // יצירה או עדכון משתמש בעת כניסה (גוגל או סימולציה)
     registerOrLoginUser(profile) {
         const users = this.getUsers();
         let user = users.find(u => u.email.toLowerCase() === profile.email.toLowerCase());
         
         if (!user) {
-            // משתמש חדש לחלוטין - ברירת מחדל תהיה חבר (Member) ללא הרשאות לרכבים עד שמנהל מאשר
             user = {
                 id: 'user-' + Date.now(),
                 email: profile.email,
                 name: profile.name,
                 picture: profile.picture || '',
                 role: 'member',
-                permissions: [] // ריק בהתחלה
+                permissions: []
             };
             users.push(user);
             saveToStorage(STORAGE_KEYS.USERS, users);
         } else {
-            // עדכון פרטים בסיסיים אם השתנו (כמו שם או תמונה)
             user.name = profile.name;
             if (profile.picture) user.picture = profile.picture;
             saveToStorage(STORAGE_KEYS.USERS, users);
@@ -338,24 +320,332 @@ const DB = {
         return user;
     },
 
-    // --- הזמנות (Bookings) ---
     getBookings() {
         return getFromStorage(STORAGE_KEYS.BOOKINGS, []);
     },
 
-    getBookingsByDate(date) {
-        return this.getBookings().filter(b => b.date === date);
+    getCurrentUser() {
+        return getFromStorage(STORAGE_KEYS.CURRENT_USER, null);
     },
 
-    // מניעת כפילויות/התנגשויות בשעות
-    checkBookingOverlap(vehicleId, date, startTime, endTime, excludeBookingId = null) {
-        const bookings = this.getBookings().filter(b => 
-            b.vehicleId === vehicleId && 
-            b.date === date && 
-            b.id !== excludeBookingId
-        );
+    setCurrentUser(user) {
+        saveToStorage(STORAGE_KEYS.CURRENT_USER, user);
+    },
 
-        // המרת שעה (HH:MM) לדקות מתחילת היום לטובת השוואה מתמטית פשוטה
+    logout() {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    }
+};
+
+// הפעלת האתחול של LocalStorage
+initLocalStorageDatabase();
+
+// הגדרת מנהל ראשי מקומי למצב Sandbox
+function initAdminFallback() {
+    const primaryAdminEmail = 'amitinbar111@gmail.com';
+    const users = DB_SyncFallback.getUsers();
+    let primaryAdmin = users.find(u => u.email.toLowerCase() === primaryAdminEmail.toLowerCase());
+
+    if (!primaryAdmin) {
+        primaryAdmin = DB_SyncFallback.addUser({
+            email: primaryAdminEmail,
+            name: 'Amit Nabar',
+            role: 'admin'
+        });
+    } else if (primaryAdmin.role !== 'admin') {
+        DB_SyncFallback.updateUserRoleAndPermissions(primaryAdmin.id, 'admin', DB_SyncFallback.getVehicles().map(v => v.id));
+    }
+
+    users.forEach(u => {
+        if (u.email.toLowerCase() !== primaryAdminEmail.toLowerCase() && u.role === 'admin') {
+            DB_SyncFallback.updateUserRoleAndPermissions(u.id, 'member', []);
+        }
+    });
+}
+initAdminFallback();
+
+// אתחול Supabase בעת טעינת הקובץ
+initSupabase();
+
+// ייצוא פונקציות מסד הנתונים האסינכרוניות (אחיד לשני המצבים)
+const DB = {
+    isSupabaseActive() {
+        return !!supabaseClient;
+    },
+
+    // --- רכבים (Vehicles) ---
+    async getVehicles() {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('vehicles')
+                .select('*')
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data.map(v => ({
+                id: v.id,
+                name: v.name,
+                model: v.model,
+                licensePlate: v.license_plate,
+                notes: v.notes
+            }));
+        }
+        return DB_SyncFallback.getVehicles();
+    },
+    
+    async getVehicleById(id) {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('vehicles')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+            return {
+                id: data.id,
+                name: data.name,
+                model: data.model,
+                licensePlate: data.license_plate,
+                notes: data.notes
+            };
+        }
+        return DB_SyncFallback.getVehicleById(id);
+    },
+    
+    async saveVehicle(vehicle) {
+        if (this.isSupabaseActive()) {
+            const mapped = {
+                name: vehicle.name,
+                model: vehicle.model,
+                license_plate: vehicle.licensePlate,
+                notes: vehicle.notes
+            };
+
+            if (vehicle.id) {
+                const { data, error } = await supabaseClient
+                    .from('vehicles')
+                    .update(mapped)
+                    .eq('id', vehicle.id)
+                    .select()
+                    .single();
+                if (error) throw error;
+                return data;
+            } else {
+                const newId = 'car-' + Date.now();
+                const { data, error } = await supabaseClient
+                    .from('vehicles')
+                    .insert({ id: newId, ...mapped })
+                    .select()
+                    .single();
+                if (error) throw error;
+                return data;
+            }
+        }
+        return DB_SyncFallback.saveVehicle(vehicle);
+    },
+    
+    async deleteVehicle(id) {
+        if (this.isSupabaseActive()) {
+            const { error } = await supabaseClient
+                .from('vehicles')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            return;
+        }
+        return DB_SyncFallback.deleteVehicle(id);
+    },
+
+    // --- משתמשים והרשאות (Users & Permissions) ---
+    async getUsers() {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            return data.map(u => ({
+                id: u.id,
+                email: u.email,
+                name: u.name,
+                picture: '',
+                role: u.role,
+                permissions: u.permissions || []
+            }));
+        }
+        return DB_SyncFallback.getUsers();
+    },
+    
+    async getUserById(id) {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+            return {
+                id: data.id,
+                email: data.email,
+                name: data.name,
+                picture: '',
+                role: data.role,
+                permissions: data.permissions || []
+            };
+        }
+        return DB_SyncFallback.getUserById(id);
+    },
+
+    async getUserByEmail(email) {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) return null;
+            return {
+                id: data.id,
+                email: data.email,
+                name: data.name,
+                picture: '',
+                role: data.role,
+                permissions: data.permissions || []
+            };
+        }
+        return DB_SyncFallback.getUserByEmail(email);
+    },
+
+    async updateUserRoleAndPermissions(userId, role, allowedVehicleIds) {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .update({
+                    role: role,
+                    permissions: allowedVehicleIds
+                })
+                .eq('id', userId)
+                .select()
+                .single();
+            if (error) throw error;
+            
+            // עדכון הסשן הפעיל במידת הצורך
+            const currentUser = await this.getCurrentUser();
+            if (currentUser && currentUser.id === userId) {
+                currentUser.role = role;
+                currentUser.permissions = allowedVehicleIds;
+                this.setCurrentUser(currentUser);
+            }
+            return data;
+        }
+        return DB_SyncFallback.updateUserRoleAndPermissions(userId, role, allowedVehicleIds);
+    },
+
+    async addUser(userData) {
+        if (this.isSupabaseActive()) {
+            // במצב Supabase, משתמשים נרשמים באמצעות התחברות ראשונה (Google Login).
+            // אנו מעלים שגיאה כדי להנחות את מנהל המערכת בהתאם.
+            throw new Error('במצב Supabase, משתמשים חייבים להתחבר תחילה עם Google כדי להירשם במערכת, ולאחר מכן מנהל המערכת יכול להעניק להם הרשאות.');
+        }
+        return DB_SyncFallback.addUser(userData);
+    },
+
+    async deleteUser(userId) {
+        if (this.isSupabaseActive()) {
+            const currentUser = await this.getCurrentUser();
+            if (currentUser && currentUser.id === userId) {
+                throw new Error('אינך יכול למחוק את המשתמש של עצמך!');
+            }
+            // מחיקת הפרופיל. זה ימחק אוטומטית את ההזמנות של המשתמש בגלל CASCADE
+            const { error } = await supabaseClient
+                .from('profiles')
+                .delete()
+                .eq('id', userId);
+            if (error) throw error;
+            return;
+        }
+        return DB_SyncFallback.deleteUser(userId);
+    },
+    
+    async registerOrLoginUser(profile) {
+        if (this.isSupabaseActive()) {
+            // המשתמש מנוהל על ידי מנגנון Supabase Auth.
+            return;
+        }
+        return DB_SyncFallback.registerOrLoginUser(profile);
+    },
+
+    // --- הזמנות (Bookings) ---
+    async getBookings() {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .select('*');
+            if (error) throw error;
+            return data.map(b => ({
+                id: b.id,
+                vehicleId: b.vehicle_id,
+                userId: b.user_id,
+                userName: b.user_name,
+                date: b.date,
+                startTime: b.start_time,
+                endTime: b.end_time,
+                purpose: b.purpose
+            }));
+        }
+        return DB_SyncFallback.getBookings();
+    },
+
+    async getBookingsByDate(date) {
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .select('*')
+                .eq('date', date);
+            if (error) throw error;
+            return data.map(b => ({
+                id: b.id,
+                vehicleId: b.vehicle_id,
+                userId: b.user_id,
+                userName: b.user_name,
+                date: b.date,
+                startTime: b.start_time,
+                endTime: b.end_time,
+                purpose: b.purpose
+            }));
+        }
+        return DB_SyncFallback.getBookingsByDate(date);
+    },
+
+    async checkBookingOverlap(vehicleId, date, startTime, endTime, excludeBookingId = null) {
+        let bookings = [];
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .select('*')
+                .eq('vehicle_id', vehicleId)
+                .eq('date', date);
+            if (error) throw error;
+            bookings = data.map(b => ({
+                id: b.id,
+                vehicleId: b.vehicle_id,
+                userId: b.user_id,
+                userName: b.user_name,
+                date: b.date,
+                startTime: b.start_time,
+                endTime: b.end_time,
+                purpose: b.purpose
+            }));
+        } else {
+            bookings = DB_SyncFallback.getBookingsByDate(date).filter(b => b.vehicleId === vehicleId);
+        }
+
+        if (excludeBookingId) {
+            bookings = bookings.filter(b => b.id !== excludeBookingId);
+        }
+
         const toMinutes = (timeStr) => {
             const [h, m] = timeStr.split(':').map(Number);
             return h * 60 + m;
@@ -372,8 +662,6 @@ const DB = {
             const bStart = toMinutes(b.startTime);
             const bEnd = toMinutes(b.endTime);
 
-            // בדיקת חפיפה: [newStart, newEnd] חופף ל-[bStart, bEnd]
-            // חפיפה מתקיימת אם התחלה חדשה קטנה מסיום קיים, וסיום חדש גדול מהתחלה קיימת
             if (newStart < bEnd && newEnd > bStart) {
                 return { 
                     overlap: true, 
@@ -385,18 +673,16 @@ const DB = {
         return { overlap: false };
     },
 
-    addBooking(bookingData) {
-        const user = this.getCurrentUser();
+    async addBooking(bookingData) {
+        const user = await this.getCurrentUser();
         if (!user) throw new Error('משתמש לא מחובר');
 
-        // אימות הרשאות גישה לרכב
         const hasAccess = user.role === 'admin' || user.permissions.includes(bookingData.vehicleId);
         if (!hasAccess) {
             throw new Error('אין לך הרשאת גישה להזמנת רכב זה. אנא פנה למנהל המערכת.');
         }
 
-        // בדיקת חפיפת זמנים
-        const overlapCheck = this.checkBookingOverlap(
+        const overlapCheck = await this.checkBookingOverlap(
             bookingData.vehicleId, 
             bookingData.date, 
             bookingData.startTime, 
@@ -407,52 +693,121 @@ const DB = {
             throw new Error(overlapCheck.message);
         }
 
-        const bookings = this.getBookings();
-        const newBooking = {
-            id: 'b-' + Date.now(),
-            vehicleId: bookingData.vehicleId,
-            userId: user.id,
-            userName: user.name,
-            date: bookingData.date,
-            startTime: bookingData.startTime,
-            endTime: bookingData.endTime,
-            purpose: bookingData.purpose || ''
-        };
+        if (this.isSupabaseActive()) {
+            const newId = 'b-' + Date.now();
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .insert({
+                    id: newId,
+                    vehicle_id: bookingData.vehicleId,
+                    user_id: user.id,
+                    user_name: user.name,
+                    date: bookingData.date,
+                    start_time: bookingData.startTime,
+                    end_time: bookingData.endTime,
+                    purpose: bookingData.purpose || ''
+                })
+                .select()
+                .single();
+            if (error) throw error;
+            return {
+                id: data.id,
+                vehicleId: data.vehicle_id,
+                userId: data.user_id,
+                userName: data.user_name,
+                date: data.date,
+                startTime: data.start_time,
+                endTime: data.end_time,
+                purpose: data.purpose
+            };
+        }
 
-        bookings.push(newBooking);
-        saveToStorage(STORAGE_KEYS.BOOKINGS, bookings);
-        return newBooking;
+        return DB_SyncFallback.addBooking(bookingData);
     },
 
-    deleteBooking(id) {
-        const user = this.getCurrentUser();
+    async deleteBooking(id) {
+        const user = await this.getCurrentUser();
         if (!user) throw new Error('משתמש לא מחובר');
 
-        const bookings = this.getBookings();
-        const booking = bookings.find(b => b.id === id);
-        
-        if (!booking) throw new Error('ההזמנה לא נמצאה');
+        let booking = null;
+        if (this.isSupabaseActive()) {
+            const { data, error } = await supabaseClient
+                .from('bookings')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) throw new Error('ההזמנה לא נמצאה');
+            booking = {
+                id: data.id,
+                userId: data.user_id,
+                userName: data.user_name
+            };
+        } else {
+            booking = DB_SyncFallback.getBookings().find(b => b.id === id);
+            if (!booking) throw new Error('ההזמנה לא נמצאה');
+        }
 
-        // רק המשתמש שהזמין או מנהל יכולים לבטל הזמנה
         if (booking.userId !== user.id && user.role !== 'admin') {
             throw new Error('רק המשתמש שביצע את ההזמנה או מנהל המערכת יכולים לבטלה.');
         }
 
-        const updatedBookings = bookings.filter(b => b.id !== id);
-        saveToStorage(STORAGE_KEYS.BOOKINGS, updatedBookings);
+        if (this.isSupabaseActive()) {
+            const { error } = await supabaseClient
+                .from('bookings')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            return;
+        }
+
+        return DB_SyncFallback.deleteBooking(id);
     },
 
     // --- הגדרות סשן והגדרות כלליות ---
-    getCurrentUser() {
-        return getFromStorage(STORAGE_KEYS.CURRENT_USER, null);
+    async getCurrentUser() {
+        if (this.isSupabaseActive()) {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return null;
+            
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
+                
+            if (error || !profile) {
+                // לפעמים יש עיכוב קטן ברישום הטריגר
+                return {
+                    id: session.user.id,
+                    email: session.user.email,
+                    name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'משתמש חדש',
+                    role: 'member',
+                    permissions: []
+                };
+            }
+            
+            return {
+                id: profile.id,
+                email: profile.email,
+                name: profile.name,
+                picture: session.user.user_metadata?.avatar_url || '',
+                role: profile.role,
+                permissions: profile.permissions || []
+            };
+        }
+        return DB_SyncFallback.getCurrentUser();
     },
 
     setCurrentUser(user) {
-        saveToStorage(STORAGE_KEYS.CURRENT_USER, user);
+        DB_SyncFallback.setCurrentUser(user);
     },
 
-    logout() {
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    async logout() {
+        if (this.isSupabaseActive()) {
+            await supabaseClient.auth.signOut();
+        }
+        DB_SyncFallback.logout();
     },
 
     getGoogleClientId() {
@@ -461,8 +816,29 @@ const DB = {
 
     setGoogleClientId(clientId) {
         localStorage.setItem(STORAGE_KEYS.GOOGLE_CLIENT_ID, clientId);
+    },
+
+    // הגדרות חיבור Supabase
+    getSupabaseSettings() {
+        return {
+            url: localStorage.getItem(STORAGE_KEYS.SUPABASE_URL) || '',
+            key: localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY) || ''
+        };
+    },
+
+    setSupabaseSettings(url, key) {
+        localStorage.setItem(STORAGE_KEYS.SUPABASE_URL, url.trim());
+        localStorage.setItem(STORAGE_KEYS.SUPABASE_KEY, key.trim());
+        initSupabase();
+    },
+
+    clearSupabaseSettings() {
+        localStorage.removeItem(STORAGE_KEYS.SUPABASE_URL);
+        localStorage.removeItem(STORAGE_KEYS.SUPABASE_KEY);
+        initSupabase();
     }
 };
 
-// ייצוא גלובלי לצורך שימוש ב-app.js
+// ייצוא גלובלי
 window.DB = DB;
+window.initSupabase = initSupabase;
