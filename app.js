@@ -972,7 +972,7 @@ const App = {
             await this.renderAdminPermissions();
         } catch (error) {
             console.error("Error adding user:", error);
-            const errMsg = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            const errMsg = window.stringifyError ? window.stringifyError(error) : (error.message || String(error));
             this.showToast(errMsg, 'error');
         }
     },

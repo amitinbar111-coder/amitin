@@ -3,6 +3,33 @@
  * תומך בשני מצבים: מצב מקומי (Sandbox) ומצב ייצור (Supabase)
  */
 
+function stringifyError(err) {
+    if (!err) return "שגיאה לא ידועה";
+    if (typeof err === 'string') return err;
+    if (err.message) return err.message;
+    if (err.error_description) return err.error_description;
+    
+    try {
+        const fallback = JSON.stringify(err);
+        if (fallback && fallback !== '{}') return fallback;
+    } catch (e) {}
+    
+    try {
+        const keys = Object.getOwnPropertyNames(err);
+        if (keys.length > 0) {
+            const obj = {};
+            keys.forEach(k => {
+                obj[k] = err[k];
+            });
+            return JSON.stringify(obj);
+        }
+    } catch (e) {}
+    
+    return String(err);
+}
+window.stringifyError = stringifyError;
+
+
 const STORAGE_KEYS = {
     VEHICLES: 'cs_vehicles',
     USERS: 'cs_users',
@@ -645,7 +672,7 @@ const DB = {
             if (authError) {
                 // Rollback invited_users insert if auth invite fails
                 await supabaseClient.from('invited_users').delete().eq('email', userData.email);
-                const errMsg = authError.message || (typeof authError === 'object' ? JSON.stringify(authError) : String(authError));
+                const errMsg = stringifyError(authError);
                 throw new Error(errMsg);
             }
             
