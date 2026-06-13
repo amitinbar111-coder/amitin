@@ -2,11 +2,21 @@
  * db.js - שכבת הנתונים והרשאות ב-LocalStorage או ב-Supabase
  * תומך בשני מצבים: מצב מקומי (Sandbox) ומצב ייצור (Supabase)
  */
-
 function stringifyError(err) {
     if (!err) return "שגיאה לא ידועה";
-    if (typeof err === 'string') return err;
-    if (err.message) return err.message;
+    if (typeof err === 'string') {
+        if (err === '{}' || err.trim() === '') {
+            return "שגיאת רשת או פסק זמן (Timeout 504) בתקשורת עם שרת ה-SMTP. אנא ודא שהגדרות ה-SMTP ב-Supabase נכונות ושהסיסמה של גוגל היא סיסמת אפליקציה ללא רווחים.";
+        }
+        return err;
+    }
+    
+    let msg = err.message;
+    if (msg === '{}' || (msg && msg.trim() === '')) {
+        msg = null;
+    }
+    
+    if (msg) return msg;
     if (err.error_description) return err.error_description;
     
     try {
@@ -21,11 +31,12 @@ function stringifyError(err) {
             keys.forEach(k => {
                 obj[k] = err[k];
             });
-            return JSON.stringify(obj);
+            const serialized = JSON.stringify(obj);
+            if (serialized && serialized !== '{}') return serialized;
         }
     } catch (e) {}
     
-    return String(err);
+    return "שגיאת רשת או פסק זמן (Timeout 504) בתקשורת עם שרת ה-SMTP. אנא ודא שהגדרות ה-SMTP ב-Supabase נכונות ושהסיסמה של גוגל היא סיסמת אפליקציה ללא רווחים.";
 }
 window.stringifyError = stringifyError;
 
