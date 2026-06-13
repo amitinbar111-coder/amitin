@@ -149,28 +149,102 @@ BEGIN
         RAISE EXCEPTION 'Registration not allowed. This email has not been invited by an administrator.';
     END IF;
 
-    -- 3. Create public profile using the invite configuration
-    INSERT INTO public.profiles (id, email, name, role, permissions)
-    VALUES (
-        new.id,
-        new.email,
-        COALESCE(new.raw_user_meta_data->>'name', invited_record.name),
-        invited_record.role,
-        invited_record.permissions
-    );
-
-    -- 4. Delete the invitation now that it has been claimed
-    DELETE FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+    -- 3. If email is already confirmed on insert (e.g. confirmation is disabled), create profile immediately
+    IF new.email_confirmed_at IS NOT NULL THEN
+        INSERT INTO public.profiles (id, email, name, role, permissions)
+        VALUES (
+            new.id,
+            new.email,
+            COALESCE(new.raw_user_meta_data->>'name', invited_record.name),
+            invited_record.role,
+            invited_record.permissions
+        );
+        DELETE FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+    END IF;
 
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger definition
+-- Trigger definition for user creation
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 9b. Automatically create profile when user confirms their email / logs in
+CREATE OR REPLACE FUNCTION public.handle_user_confirmation()
+RETURNS trigger AS $$
+DECLARE
+    invited_record record;
+    profile_exists boolean;
+BEGIN
+    -- Only proceed if the email is confirmed
+    IF new.email_confirmed_at IS NULL THEN
+        RETURN new;
+    END IF;
+
+    -- Check if profile already exists
+    SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = new.id) INTO profile_exists;
+    IF profile_exists THEN
+        RETURN new;
+    END IF;
+
+    -- Get invite details
+    SELECT * INTO invited_record FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+
+    IF FOUND THEN
+        -- Create public profile using the invite configuration
+        INSERT INTO public.profiles (id, email, name, role, permissions)
+        VALUES (
+            new.id,
+            new.email,
+            COALESCE(new.raw_user_meta_data->>'name', invited_record.name),
+            invited_record.role,
+            invited_record.permissions
+        );
+
+        -- Delete the invitation now that it has been claimed
+        DELETE FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+    END IF;
+
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger definition for user confirmation
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+CREATE TRIGGER on_auth_user_updated
+    AFTER UPDATE ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_user_confirmation();
+
+-- 9c. Automatically clean up auth.users when a pending invite is deleted
+CREATE OR REPLACE FUNCTION public.handle_deleted_invite()
+RETURNS trigger AS $$
+BEGIN
+    DELETE FROM auth.users WHERE LOWER(email) = LOWER(old.email) AND email_confirmed_at IS NULL;
+    RETURN old;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_invite_deleted ON public.invited_users;
+CREATE TRIGGER on_invite_deleted
+    AFTER DELETE ON public.invited_users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_deleted_invite();
+
+-- 9d. Automatically clean up auth.users when a profile is deleted
+CREATE OR REPLACE FUNCTION public.handle_deleted_profile()
+RETURNS trigger AS $$
+BEGIN
+    DELETE FROM auth.users WHERE id = old.id;
+    RETURN old;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_profile_deleted ON public.profiles;
+CREATE TRIGGER on_profile_deleted
+    AFTER DELETE ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.handle_deleted_profile();
 
 -- 10. Insert Initial Mock Vehicles (Optional, but useful to populate database)
 INSERT INTO public.vehicles (id, name, model, license_plate, notes) VALUES
