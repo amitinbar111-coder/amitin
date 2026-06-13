@@ -645,7 +645,8 @@ const DB = {
             if (authError) {
                 // Rollback invited_users insert if auth invite fails
                 await supabaseClient.from('invited_users').delete().eq('email', userData.email);
-                throw authError;
+                const errMsg = authError.message || (typeof authError === 'object' ? JSON.stringify(authError) : String(authError));
+                throw new Error(errMsg);
             }
             
             return { email: userData.email, name: userData.name };

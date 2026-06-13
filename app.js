@@ -971,7 +971,9 @@ const App = {
             this.closeModal('user-modal');
             await this.renderAdminPermissions();
         } catch (error) {
-            this.showToast(error.message, 'error');
+            console.error("Error adding user:", error);
+            const errMsg = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            this.showToast(errMsg, 'error');
         }
     },
 
