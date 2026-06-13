@@ -152,6 +152,12 @@ const App = {
 
     // פתיחת חלון התחברות גוגל מדומה
     async showMockGoogleLoginWindow() {
+        if (DB.isSupabaseActive()) {
+            this.showToast("התחברות מדומה אינה נתמכת כאשר חיבור Supabase פעיל. יש להגדיר Google Client ID בהגדרות.", 'warning');
+            alert("לא ניתן להשתמש בהתחברות מדומה כאשר חיבור Supabase פעיל. \n\nכדי להשתמש בהתחברות מדומה, עליך לאפס את הגדרות Supabase בדף ההגדרות כדי לעבור למצב Sandbox מקומי.");
+            return;
+        }
+
         const email = prompt("הזן כתובת אימייל מדומה של גוגל:", "yossi.cohen@gmail.com");
         if (!email) return;
         
