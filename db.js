@@ -459,25 +459,65 @@ const DB = {
     // --- משתמשים והרשאות (Users & Permissions) ---
     async getUsers() {
         if (this.isSupabaseActive()) {
-            const { data, error } = await supabaseClient
+            const { data: profiles, error: pError } = await supabaseClient
                 .from('profiles')
                 .select('*')
                 .order('created_at', { ascending: true });
-            if (error) throw error;
-            return data.map(u => ({
-                id: u.id,
-                email: u.email,
-                name: u.name,
-                picture: '',
-                role: u.role,
-                permissions: u.permissions || []
-            }));
+            if (pError) throw pError;
+
+            const { data: invites, error: iError } = await supabaseClient
+                .from('invited_users')
+                .select('*')
+                .order('created_at', { ascending: true });
+            if (iError) throw iError;
+
+            const list = [];
+            profiles.forEach(u => {
+                list.push({
+                    id: u.id,
+                    email: u.email,
+                    name: u.name,
+                    picture: '',
+                    role: u.role,
+                    permissions: u.permissions || []
+                });
+            });
+            invites.forEach(u => {
+                list.push({
+                    id: 'invite-' + u.email,
+                    email: u.email,
+                    name: u.name + ' (ממתין להרשמה)',
+                    picture: '',
+                    role: u.role,
+                    permissions: u.permissions || []
+                });
+            });
+            return list;
         }
         return DB_SyncFallback.getUsers();
     },
     
     async getUserById(id) {
         if (this.isSupabaseActive()) {
+            if (id.startsWith('invite-')) {
+                const email = id.replace('invite-', '');
+                const { data, error } = await supabaseClient
+                    .from('invited_users')
+                    .select('*')
+                    .eq('email', email)
+                    .maybeSingle();
+                if (error) throw error;
+                if (!data) return null;
+                return {
+                    id: 'invite-' + data.email,
+                    email: data.email,
+                    name: data.name,
+                    picture: '',
+                    role: data.role,
+                    permissions: data.permissions || []
+                };
+            }
+
             const { data, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
@@ -496,7 +536,7 @@ const DB = {
         }
         return DB_SyncFallback.getUserById(id);
     },
-
+    
     async getUserByEmail(email) {
         if (this.isSupabaseActive()) {
             const { data, error } = await supabaseClient
@@ -517,9 +557,24 @@ const DB = {
         }
         return DB_SyncFallback.getUserByEmail(email);
     },
-
+    
     async updateUserRoleAndPermissions(userId, role, allowedVehicleIds) {
         if (this.isSupabaseActive()) {
+            if (userId.startsWith('invite-')) {
+                const email = userId.replace('invite-', '');
+                const { data, error } = await supabaseClient
+                    .from('invited_users')
+                    .update({
+                        role: role,
+                        permissions: allowedVehicleIds
+                    })
+                    .eq('email', email)
+                    .select()
+                    .single();
+                if (error) throw error;
+                return data;
+            }
+
             const { data, error } = await supabaseClient
                 .from('profiles')
                 .update({
@@ -542,18 +597,74 @@ const DB = {
         }
         return DB_SyncFallback.updateUserRoleAndPermissions(userId, role, allowedVehicleIds);
     },
-
+    
     async addUser(userData) {
         if (this.isSupabaseActive()) {
-            // במצב Supabase, משתמשים נרשמים באמצעות התחברות ראשונה (Google Login).
-            // אנו מעלים שגיאה כדי להנחות את מנהל המערכת בהתאם.
-            throw new Error('במצב Supabase, משתמשים חייבים להתחבר תחילה עם Google כדי להירשם במערכת, ולאחר מכן מנהל המערכת יכול להעניק להם הרשאות.');
+            // Check if email already exists in profiles
+            const { data: existingProfile } = await supabaseClient
+                .from('profiles')
+                .select('id')
+                .eq('email', userData.email)
+                .maybeSingle();
+                
+            if (existingProfile) {
+                throw new Error('משתמש עם דוא"ל זה כבר רשום במערכת');
+            }
+
+            // Check if email already exists in invited_users
+            const { data: existingInvite } = await supabaseClient
+                .from('invited_users')
+                .select('email')
+                .eq('email', userData.email)
+                .maybeSingle();
+                
+            if (existingInvite) {
+                throw new Error('הזמנה לדוא"ל זה כבר נשלחה וממתינה להתחברות');
+            }
+
+            // Insert into invited_users whitelisting table
+            const { error: insertError } = await supabaseClient
+                .from('invited_users')
+                .insert({
+                    email: userData.email.toLowerCase(),
+                    name: userData.name,
+                    role: userData.role,
+                    permissions: []
+                });
+                
+            if (insertError) throw insertError;
+
+            // Trigger magic link email invitation
+            const { error: authError } = await supabaseClient.auth.signInWithOtp({
+                email: userData.email,
+                options: {
+                    emailRedirectTo: window.location.origin + window.location.pathname
+                }
+            });
+            
+            if (authError) {
+                // Rollback invited_users insert if auth invite fails
+                await supabaseClient.from('invited_users').delete().eq('email', userData.email);
+                throw authError;
+            }
+            
+            return { email: userData.email, name: userData.name };
         }
         return DB_SyncFallback.addUser(userData);
     },
-
+    
     async deleteUser(userId) {
         if (this.isSupabaseActive()) {
+            if (userId.startsWith('invite-')) {
+                const email = userId.replace('invite-', '');
+                const { error } = await supabaseClient
+                    .from('invited_users')
+                    .delete()
+                    .eq('email', email);
+                if (error) throw error;
+                return;
+            }
+
             const currentUser = await this.getCurrentUser();
             if (currentUser && currentUser.id === userId) {
                 throw new Error('אינך יכול למחוק את המשתמש של עצמך!');

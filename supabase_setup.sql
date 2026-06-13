@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create Invited Users Table (whitelisting)
+CREATE TABLE IF NOT EXISTS public.invited_users (
+    email text PRIMARY KEY,
+    name text NOT NULL,
+    role text NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+    permissions text[] NOT NULL DEFAULT '{}'::text[],
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- 3. Create Bookings Table
 CREATE TABLE IF NOT EXISTS public.bookings (
     id text PRIMARY KEY,
@@ -38,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invited_users ENABLE ROW LEVEL SECURITY;
 
 -- 5. Vehicles RLS Policies
 CREATE POLICY "Enable read access for authenticated users" ON public.vehicles
@@ -94,26 +104,55 @@ CREATE POLICY "Enable delete access for owner or admin" ON public.bookings
         )
     );
 
--- 8. Automatically synchronize auth.users with public.profiles on signup
+-- 8. Invited Users RLS Policies
+CREATE POLICY "Enable full access for admins only" ON public.invited_users
+    FOR ALL TO authenticated USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+        )
+    );
+
+-- 9. Automatically synchronize auth.users with public.profiles on signup (Whitelisting mode)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 DECLARE
-    default_role text := 'member';
-    default_perms text[] := '{}'::text[];
+    invited_record record;
 BEGIN
-    -- Automatically set 'amitinbar111@gmail.com' as admin
-    IF new.email = 'amitinbar111@gmail.com' THEN
-        default_role := 'admin';
+    -- 1. Automatically make the owner's email 'amitinbar111@gmail.com' an admin
+    IF LOWER(new.email) = 'amitinbar111@gmail.com' THEN
+        INSERT INTO public.profiles (id, email, name, role, permissions)
+        VALUES (
+            new.id,
+            new.email,
+            'Amit Inbar Ben Ze''ev',
+            'admin',
+            '{}'::text[]
+        )
+        ON CONFLICT (id) DO UPDATE SET role = 'admin';
+        RETURN new;
     END IF;
 
+    -- 2. Verify that the email is whitelisted in invited_users
+    SELECT * INTO invited_record FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Registration not allowed. This email has not been invited by an administrator.';
+    END IF;
+
+    -- 3. Create public profile using the invite configuration
     INSERT INTO public.profiles (id, email, name, role, permissions)
     VALUES (
         new.id,
         new.email,
-        COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', 'משתמש חדש'),
-        default_role,
-        default_perms
+        COALESCE(new.raw_user_meta_data->>'name', invited_record.name),
+        invited_record.role,
+        invited_record.permissions
     );
+
+    -- 4. Delete the invitation now that it has been claimed
+    DELETE FROM public.invited_users WHERE LOWER(email) = LOWER(new.email);
+
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -124,7 +163,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 9. Insert Initial Mock Vehicles (Optional, but useful to populate database)
+-- 10. Insert Initial Mock Vehicles (Optional, but useful to populate database)
 INSERT INTO public.vehicles (id, name, model, license_plate, notes) VALUES
     ('car-1', 'יונדאי איוניק 5', '2023 חשמלי', '12-345-67', 'רכב חשמלי מלא. נא להחזיר תמיד לעמדת הטענה ולחבר לחשמל בסיום הנסיעה!'),
     ('car-2', 'טויוטה יאריס היברידית', '2022 היברידי', '98-765-43', 'רכב סופר-מיני חסכוני ונוח במיוחד לנסיעות עירוניות וחניות צפופות.'),

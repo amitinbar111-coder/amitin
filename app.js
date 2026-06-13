@@ -963,7 +963,11 @@ const App = {
 
         try {
             await DB.addUser(userData);
-            this.showToast("המשתמש נוסף בהצלחה!", 'success');
+            if (DB.isSupabaseActive()) {
+                this.showToast("נשלחה הזמנת התחברות בדוא\"ל למשתמש!", 'success');
+            } else {
+                this.showToast("המשתמש נוסף בהצלחה!", 'success');
+            }
             this.closeModal('user-modal');
             await this.renderAdminPermissions();
         } catch (error) {
