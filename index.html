@@ -549,6 +549,32 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!--          מודל 5: שיתוף הזמנה ב-WhatsApp          -->
+    <!-- ========================================== -->
+    <div id="invite-share-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">שיתוף הזמנת משתמש</h3>
+                <button class="modal-close" onclick="App.closeModal('invite-share-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">
+                    המשתמש נוסף בהצלחה לרשימת המורשים! העתק ושלח לו את הודעת ההזמנה הבאה ב-WhatsApp:
+                </p>
+                <div class="form-group">
+                    <label class="form-label" for="invite-message-text">הודעת ההזמנה:</label>
+                    <textarea id="invite-message-text" class="form-control" style="height: 120px; line-height: 1.5;" readonly></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="App.closeModal('invite-share-modal')">סגור</button>
+                <button type="button" class="btn btn-primary" onclick="App.copyInviteMessage()" style="background-color: #4f46e5; border-color: #4f46e5;">📋 העתק הודעה</button>
+                <button type="button" class="btn btn-primary" onclick="App.sendWhatsAppMessage()" style="background-color: #25D366; border-color: #25D366;">💬 שלח ב-WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
     <!-- קישור לקובץ הלוגיקה הראשי -->
     <script src="db.js"></script>
     <script src="app.js"></script>

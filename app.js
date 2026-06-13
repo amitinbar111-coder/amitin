@@ -963,18 +963,40 @@ const App = {
 
         try {
             await DB.addUser(userData);
-            if (DB.isSupabaseActive()) {
-                this.showToast("נשלחה הזמנת התחברות בדוא\"ל למשתמש!", 'success');
-            } else {
-                this.showToast("המשתמש נוסף בהצלחה!", 'success');
-            }
             this.closeModal('user-modal');
             await this.renderAdminPermissions();
+
+            const appUrl = window.location.origin + window.location.pathname;
+            const msgText = `הוזמנת להשתמש באפליקציית סידור הרכב של גרעין אדמה. לרישום, אנא כנס לקישור הבא והירשם עם המייל שלך:\n${appUrl}`;
+            
+            document.getElementById('invite-message-text').value = msgText;
+            this.openModal('invite-share-modal');
+            this.showToast("המשתמש נוסף לרשימת המורשים!", 'success');
         } catch (error) {
             console.error("Error adding user:", error);
             const errMsg = window.stringifyError ? window.stringifyError(error) : (error.message || String(error));
             this.showToast(errMsg, 'error');
         }
+    },
+
+    copyInviteMessage() {
+        const textarea = document.getElementById('invite-message-text');
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        
+        try {
+            navigator.clipboard.writeText(textarea.value);
+            this.showToast("ההודעה הועתקה לקליפבורד!", 'success');
+        } catch (err) {
+            this.showToast("שגיאה בהעתקת ההודעה", 'error');
+        }
+    },
+
+    sendWhatsAppMessage() {
+        const msgText = document.getElementById('invite-message-text').value;
+        const encodedText = encodeURIComponent(msgText);
+        const url = `https://api.whatsapp.com/send?text=${encodedText}`;
+        window.open(url, '_blank');
     },
 
     async handleUserDelete(userId) {

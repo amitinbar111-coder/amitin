@@ -672,21 +672,6 @@ const DB = {
                 
             if (insertError) throw insertError;
 
-            // Trigger magic link email invitation
-            const { error: authError } = await supabaseClient.auth.signInWithOtp({
-                email: userData.email,
-                options: {
-                    emailRedirectTo: window.location.origin + window.location.pathname
-                }
-            });
-            
-            if (authError) {
-                // Rollback invited_users insert if auth invite fails
-                await supabaseClient.from('invited_users').delete().eq('email', userData.email);
-                const errMsg = stringifyError(authError);
-                throw new Error(errMsg);
-            }
-            
             return { email: userData.email, name: userData.name };
         }
         return DB_SyncFallback.addUser(userData);
