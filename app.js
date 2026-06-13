@@ -112,7 +112,14 @@ const App = {
         } else {
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('login-screen').style.display = 'flex';
-            await this.renderSandboxUsers();
+            
+            const isSb = DB.isSupabaseActive();
+            document.getElementById('supabase-login-container').style.display = isSb ? 'block' : 'none';
+            document.getElementById('sandbox-login-container').style.display = isSb ? 'none' : 'block';
+            
+            if (!isSb) {
+                await this.renderSandboxUsers();
+            }
         }
     },
 
@@ -173,6 +180,62 @@ const App = {
         const user = await DB.registerOrLoginUser(profile);
         this.showToast(`התחברת בהצלחה עם Google עבור ${user.name}`, 'success');
         await this.checkAuthStatus();
+    },
+
+    async handleSupabaseEmailLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+        if (!email || !password) {
+            this.showToast("נא להזין אימייל וסיסמה להתחברות", 'warning');
+            return;
+        }
+
+        try {
+            const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+            if (error) throw error;
+            
+            this.showToast("התחברת בהצלחה!", 'success');
+            await this.checkAuthStatus();
+        } catch (e) {
+            console.error(e);
+            this.showToast(`התחברות נכשלה: ${e.message}`, 'error');
+        }
+    },
+
+    async handleSupabaseEmailSignUp() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+        if (!email || !password) {
+            this.showToast("נא להזין אימייל וסיסמה להרשמה", 'warning');
+            return;
+        }
+        if (password.length < 6) {
+            this.showToast("הסיסמה חייבת להיות לפחות 6 תווים", 'warning');
+            return;
+        }
+        const name = prompt("הזן את שמך המלא עבור הפרופיל (לדוגמה: עמית ענבר):");
+        if (!name) return;
+
+        try {
+            const { data, error } = await window.supabaseClient.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name: name
+                    }
+                }
+            });
+            if (error) throw error;
+            
+            this.showToast("הרשמה בוצעה בהצלחה! התחבר כעת עם פרטיך.", 'success');
+        } catch (e) {
+            console.error(e);
+            this.showToast(`הרשמה נכשלה: ${e.message}`, 'error');
+        }
     },
 
     // אתחול Google Identity Services (GIS)

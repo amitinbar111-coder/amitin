@@ -43,11 +43,29 @@
                 <div id="google-gsi-container" style="display:none; margin: 0 auto 20px auto; width: fit-content;"></div>
             </div>
 
-            <div class="divider">או בחרו משתמש לבדיקה (Sandbox)</div>
-            
-            <div class="sandbox-title">סביבת פיתוח ובדיקות</div>
-            <div id="sandbox-users-list" class="sandbox-users">
-                <!-- ירונדר דינמית מתוך db.js -->
+            <!-- טופס התחברות Supabase (Email/Password) -->
+            <div id="supabase-login-container" style="display: none; margin-top: 15px; text-align: right;">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label" for="login-email">כתובת אימייל:</label>
+                    <input type="email" id="login-email" class="form-control" style="direction: ltr;" placeholder="name@example.com">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label class="form-label" for="login-password">סיסמה (לפחות 6 תווים):</label>
+                    <input type="password" id="login-password" class="form-control" style="direction: ltr;" placeholder="••••••••">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="App.handleSupabaseEmailLogin()" style="flex: 1;">התחבר</button>
+                    <button class="btn btn-secondary" onclick="App.handleSupabaseEmailSignUp()" style="flex: 1;">הרשמה כחבר חדש</button>
+                </div>
+            </div>
+
+            <div id="sandbox-login-container">
+                <div class="divider">או בחרו משתמש לבדיקה (Sandbox)</div>
+                
+                <div class="sandbox-title">סביבת פיתוח ובדיקות</div>
+                <div id="sandbox-users-list" class="sandbox-users">
+                    <!-- ירונדר דינמית מתוך db.js -->
+                </div>
             </div>
         </div>
     </div>
