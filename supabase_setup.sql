@@ -50,9 +50,11 @@ ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invited_users ENABLE ROW LEVEL SECURITY;
 
 -- 5. Vehicles RLS Policies
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.vehicles;
 CREATE POLICY "Enable read access for authenticated users" ON public.vehicles
     FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Enable write access for admins only" ON public.vehicles;
 CREATE POLICY "Enable write access for admins only" ON public.vehicles
     FOR ALL TO authenticated USING (
         EXISTS (
@@ -62,9 +64,11 @@ CREATE POLICY "Enable write access for admins only" ON public.vehicles
     );
 
 -- 6. Profiles RLS Policies
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.profiles;
 CREATE POLICY "Enable read access for authenticated users" ON public.profiles
     FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Enable update access for admins only" ON public.profiles;
 CREATE POLICY "Enable update access for admins only" ON public.profiles
     FOR UPDATE TO authenticated USING (
         EXISTS (
@@ -73,6 +77,7 @@ CREATE POLICY "Enable update access for admins only" ON public.profiles
         )
     );
 
+DROP POLICY IF EXISTS "Enable delete access for admins only" ON public.profiles;
 CREATE POLICY "Enable delete access for admins only" ON public.profiles
     FOR DELETE TO authenticated USING (
         EXISTS (
@@ -82,9 +87,11 @@ CREATE POLICY "Enable delete access for admins only" ON public.profiles
     );
 
 -- 7. Bookings RLS Policies
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.bookings;
 CREATE POLICY "Enable read access for authenticated users" ON public.bookings
     FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "Enable insert access for authorized users" ON public.bookings;
 CREATE POLICY "Enable insert access for authorized users" ON public.bookings
     FOR INSERT TO authenticated WITH CHECK (
         auth.uid() = user_id
@@ -95,6 +102,7 @@ CREATE POLICY "Enable insert access for authorized users" ON public.bookings
         )
     );
 
+DROP POLICY IF EXISTS "Enable delete access for owner or admin" ON public.bookings;
 CREATE POLICY "Enable delete access for owner or admin" ON public.bookings
     FOR DELETE TO authenticated USING (
         auth.uid() = user_id
@@ -105,6 +113,7 @@ CREATE POLICY "Enable delete access for owner or admin" ON public.bookings
     );
 
 -- 8. Invited Users RLS Policies
+DROP POLICY IF EXISTS "Enable full access for admins only" ON public.invited_users;
 CREATE POLICY "Enable full access for admins only" ON public.invited_users
     FOR ALL TO authenticated USING (
         EXISTS (
