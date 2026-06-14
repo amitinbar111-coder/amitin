@@ -773,6 +773,55 @@ const App = {
         this.checkAuthStatus();
     },
 
+    openConnectionSettingsModal() {
+        const clientId = DB.getGoogleClientId();
+        document.getElementById('conn-google-client-id').value = clientId;
+
+        const sbSettings = DB.getSupabaseSettings();
+        document.getElementById('conn-supabase-url').value = sbSettings.url;
+        document.getElementById('conn-supabase-key').value = sbSettings.key;
+        
+        this.openModal('connection-settings-modal');
+    },
+
+    saveConnectionSettings(event) {
+        if (event) event.preventDefault();
+        
+        const url = document.getElementById('conn-supabase-url').value.trim();
+        const key = document.getElementById('conn-supabase-key').value.trim();
+        const clientId = document.getElementById('conn-google-client-id').value.trim();
+        
+        if (url && key) {
+            DB.setSupabaseSettings(url, key);
+        } else if (!url && !key) {
+            DB.clearSupabaseSettings();
+        } else {
+            this.showToast("נא למלא את שני שדות ה-Supabase או להשאירם ריקים למעבר למצב Sandbox מקומי", "warning");
+            return;
+        }
+        
+        DB.setGoogleClientId(clientId);
+        
+        this.showToast("הגדרות החיבור עודכנו בהצלחה! טוען מחדש...", "success");
+        this.closeModal('connection-settings-modal');
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    },
+    
+    resetConnectionSettingsToDefault() {
+        if (confirm("האם אתה בטוח שברצונך לאפס את ההגדרות לברירות המחדל של הייצור?")) {
+            localStorage.removeItem('cs_supabase_url');
+            localStorage.removeItem('cs_supabase_key');
+            localStorage.removeItem('cs_google_client_id');
+            this.showToast("ההגדרות אופסו לברירות המחדל של הייצור. טוען מחדש...", "info");
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+    },
+
     // --- לוגיקת מודלים (Modals Logic) ---
     openModal(modalId) {
         document.getElementById(modalId).classList.add('active');
