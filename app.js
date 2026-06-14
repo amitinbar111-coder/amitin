@@ -319,7 +319,8 @@ const App = {
             }
         } catch (e) {
             console.error("התחברות גוגל נכשלה:", e);
-            this.showToast("התחברות גוגל נכשלה. נסה שנית.", 'error');
+            const errMsg = window.stringifyError ? window.stringifyError(e) : (e.message || String(e));
+            this.showToast(`התחברות גוגל נכשלה: ${errMsg}`, 'error');
         }
     },
 
