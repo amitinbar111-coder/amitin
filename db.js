@@ -54,9 +54,22 @@ const STORAGE_KEYS = {
 // לקוח ה-Supabase הגלובלי
 let supabaseClient = null;
 
+// הגדרות ברירת מחדל לייצור (משמש כגיבוי כשאין הגדרות ב-LocalStorage)
+const DEFAULT_SUPABASE_URL = 'https://hqtploaagmgcsjxyyncl.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_Bsvx4qXs87e0TEaYE6WL5A_DNlVM6OG3';
+const DEFAULT_GOOGLE_CLIENT_ID = '397595431426-ve7qgl6uf89llsn2rf9dtnf0n2dbaol5.apps.googleusercontent.com';
+
 function initSupabase() {
-    const url = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL);
-    const key = localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY);
+    const localUrl = localStorage.getItem(STORAGE_KEYS.SUPABASE_URL);
+    const localKey = localStorage.getItem(STORAGE_KEYS.SUPABASE_KEY);
+    
+    // אם המשתמש מעולם לא הגדיר ערכים (במכשיר חדש), נשתמש בברירות המחדל
+    let url = localUrl;
+    let key = localKey;
+    if (localUrl === null && localKey === null) {
+        url = DEFAULT_SUPABASE_URL;
+        key = DEFAULT_SUPABASE_KEY;
+    }
     
     if (url && key && typeof supabase !== 'undefined') {
         try {
@@ -71,7 +84,7 @@ function initSupabase() {
     } else {
         supabaseClient = null;
         window.supabaseClient = null;
-        console.log('Using local storage sandbox mode (Supabase credentials not configured).');
+        console.log('Using local storage sandbox mode.');
     }
 }
 
@@ -946,7 +959,11 @@ const DB = {
     },
 
     getGoogleClientId() {
-        return localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID) || '';
+        const localId = localStorage.getItem(STORAGE_KEYS.GOOGLE_CLIENT_ID);
+        if (localId !== null) {
+            return localId;
+        }
+        return DEFAULT_GOOGLE_CLIENT_ID;
     },
 
     setGoogleClientId(clientId) {
@@ -968,8 +985,9 @@ const DB = {
     },
 
     clearSupabaseSettings() {
-        localStorage.removeItem(STORAGE_KEYS.SUPABASE_URL);
-        localStorage.removeItem(STORAGE_KEYS.SUPABASE_KEY);
+        // הגדרה למחרוזת ריקה (ולא הסרה) כדי לציין במפורש רצון לעבור למצב Sandbox מקומי
+        localStorage.setItem(STORAGE_KEYS.SUPABASE_URL, '');
+        localStorage.setItem(STORAGE_KEYS.SUPABASE_KEY, '');
         initSupabase();
     }
 };
