@@ -56,7 +56,7 @@ let supabaseClient = null;
 
 // הגדרות ברירת מחדל לייצור (משמש כגיבוי כשאין הגדרות ב-LocalStorage)
 const DEFAULT_SUPABASE_URL = 'https://hqtploaagmgcsjxyyncl.supabase.co';
-const DEFAULT_SUPABASE_KEY = 'sb_publishable_Bsvx4qXs87e0TEaYE6WL5A_DNlVM6OG3';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_Bsvx4qXs87e0TEaYE6WL5A_DNlVM6OG';
 const DEFAULT_GOOGLE_CLIENT_ID = '397595431426-ve7qgl6uf89llsn2rf9dtnf0n2dbaol5.apps.googleusercontent.com';
 
 function initSupabase() {
