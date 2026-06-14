@@ -1127,12 +1127,33 @@ textarea.form-control {
         align-items: stretch;
     }
     
+    .brand-section {
+        justify-content: center;
+    }
+    
+    nav {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .nav-link {
+        padding: 8px 12px;
+        font-size: 0.88rem;
+        flex: 1;
+        text-align: center;
+        min-width: 80px;
+    }
+    
     .user-profile-widget {
-        justify-content: space-between;
+        justify-content: center;
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
+        margin-top: 5px;
     }
     
     main {
-        padding: 15px;
+        padding: 12px;
     }
     
     .scheduler-controls {
@@ -1144,24 +1165,77 @@ textarea.form-control {
         justify-content: space-between;
     }
     
+    /* Make the timeline scheduler horizontally scrollable on mobile */
+    .scheduler-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
     .scheduler-header {
-        grid-template-columns: 120px 1fr;
+        grid-template-columns: 100px 720px; /* Sticky header + 18 columns * 40px */
     }
     
     .scheduler-row {
-        grid-template-columns: 120px 1fr;
+        grid-template-columns: 100px 720px; /* Sticky row header + 18 tracks * 40px */
+        min-height: 70px;
     }
     
-    .scheduler-corner, .scheduler-car-info {
+    .timeline-hours {
+        grid-template-columns: repeat(18, 40px);
+    }
+    
+    .scheduler-timeline-track {
+        grid-template-columns: repeat(18, 40px);
+    }
+    
+    /* Make the row headers sticky on the right for RTL scrolling */
+    .scheduler-corner {
+        position: sticky;
+        right: 0;
+        background-color: var(--bg-tertiary);
+        z-index: 3;
+        border-left: 1px solid var(--border-color);
         padding: 10px;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .scheduler-car-info {
+        position: sticky;
+        right: 0;
+        background-color: var(--bg-tertiary);
+        z-index: 3;
+        border-left: 1px solid var(--border-color);
+        padding: 8px;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
     }
     
     .car-row-name {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
+    }
+    
+    .car-row-plate {
+        font-size: 0.7rem;
     }
     
     .form-row {
         grid-template-columns: 1fr;
         gap: 0;
+    }
+
+    /* Modal styling for mobile screen sizes */
+    .modal-card {
+        padding: 20px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .booking-block {
+        padding: 4px 6px;
+        font-size: 0.72rem;
+    }
+    
+    .booking-block-time {
+        font-size: 0.65rem;
     }
 }
