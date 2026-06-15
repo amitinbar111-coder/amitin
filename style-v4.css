@@ -1134,7 +1134,7 @@ textarea.form-control {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
     header {
         padding: 15px;
         flex-direction: column;
@@ -1173,16 +1173,20 @@ textarea.form-control {
     
     .page-title-section {
         flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
+        align-items: center;
+        gap: 12px;
         text-align: center;
     }
 
     #btn-open-booking-modal {
         width: auto;
-        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         padding: 12px 28px;
         font-size: 1rem;
+        font-weight: 700;
         white-space: nowrap;
         border-radius: var(--radius-md);
         box-shadow: 0 4px 12px rgba(95, 90, 246, 0.25);

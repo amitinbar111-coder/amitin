@@ -1,9 +1,9 @@
-const CACHE_NAME = 'cs-fleet-v3';
+const CACHE_NAME = 'cs-fleet-v4';
 const ASSETS = [
     'index.html',
-    'style.css',
+    'style-v4.css',
     'db.js',
-    'app.js',
+    'app-v4.js',
     'icon.png',
     'manifest.json'
 ];

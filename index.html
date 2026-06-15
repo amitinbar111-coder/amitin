@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style-v4.css">
     <!-- Google Identity Services client library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Supabase JS Client Library -->
@@ -134,16 +134,16 @@
                         <p id="calendar-subtitle" class="page-subtitle">צפה והזמן נסיעות בצי הרכב המשותף</p>
                     </div>
                     <button id="btn-open-booking-modal" class="btn btn-primary">
-                        <span>➕&nbsp;הזמנה&nbsp;חדשה</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 6px; display: inline-block; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg><span>הזמנה&nbsp;חדשה</span>
                     </button>
                 </div>
 
                 <!-- בקרת בחירת תאריכים -->
                 <div class="scheduler-controls">
                     <div class="date-picker-nav">
-                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(-1)" title="יום קודם">▶</button>
+                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(-1)" title="יום קודם">◀</button>
                         <span id="current-date-display" class="date-display">יום שלישי, 9 יוני 2026</span>
-                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(1)" title="יום הבא">◀</button>
+                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(1)" title="יום הבא">▶</button>
                     </div>
                     <div class="date-input-wrapper">
                         <label for="datepicker" style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">בחר תאריך:</label>
@@ -650,7 +650,7 @@
 
     <!-- קישור לקובץ הלוגיקה הראשי -->
     <script src="db.js"></script>
-    <script src="app.js"></script>
+    <script src="app-v4.js"></script>
     
     <!-- רישום Service Worker עבור PWA והתאמות מובייל -->
     <script>
