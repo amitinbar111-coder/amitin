@@ -375,6 +375,10 @@ const DB_SyncFallback = {
         return getFromStorage(STORAGE_KEYS.BOOKINGS, []);
     },
 
+    getBookingsByDate(date) {
+        return this.getBookings().filter(b => b.date === date);
+    },
+
     getCurrentUser() {
         return getFromStorage(STORAGE_KEYS.CURRENT_USER, null);
     },
