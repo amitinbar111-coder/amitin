@@ -231,7 +231,7 @@ const App = {
             });
             if (error) throw error;
             
-            this.showToast("הרשמה בוצעה בהצלחה! התחבר כעת עם פרטיך.", 'success');
+            this.showToast(`הרשמה בוצעה בהצלחה! התחבר כעת עם כתובת האימייל שלך: ${email}`, 'success');
         } catch (e) {
             console.error(e);
             this.showToast(`הרשמה נכשלה: ${e.message}`, 'error');
