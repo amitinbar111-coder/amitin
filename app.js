@@ -238,6 +238,15 @@ const App = {
         }
     },
 
+    logoClickCount: 0,
+    handleLogoClick() {
+        this.logoClickCount = (this.logoClickCount || 0) + 1;
+        if (this.logoClickCount >= 5) {
+            this.logoClickCount = 0;
+            this.openConnectionSettingsModal();
+        }
+    },
+
     // אתחול Google Identity Services (GIS)
     initGoogleSignIn() {
         const clientId = DB.getGoogleClientId();
@@ -250,7 +259,7 @@ const App = {
             return;
         }
 
-        if (gsiContainer) gsiContainer.style.display = 'block';
+        if (gsiContainer) gsiContainer.style.display = 'flex';
         if (mockBtn) mockBtn.style.display = 'none';
 
         try {
