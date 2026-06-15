@@ -115,6 +115,21 @@ a, button, input, select, textarea {
     transform: translateY(-1px);
 }
 
+/* Styling for booking button */
+#btn-open-booking-modal {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(95, 90, 246, 0.3);
+    transition: var(--transition);
+}
+#btn-open-booking-modal:hover {
+    background: linear-gradient(135deg, var(--primary-hover), var(--accent));
+    box-shadow: 0 6px 15px rgba(95, 90, 246, 0.4);
+    transform: translateY(-1px);
+}
+
 .btn-secondary {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
@@ -344,7 +359,7 @@ header {
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     border-bottom: 1px solid var(--border-color);
-    padding: 15px 30px;
+    padding: calc(15px + env(safe-area-inset-top, 0px)) 30px 15px 30px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1156,6 +1171,23 @@ textarea.form-control {
         padding: 12px;
     }
     
+    .page-title-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        text-align: center;
+    }
+
+    #btn-open-booking-modal {
+        width: auto;
+        align-self: center;
+        padding: 12px 28px;
+        font-size: 1rem;
+        white-space: nowrap;
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 12px rgba(95, 90, 246, 0.25);
+    }
+    
     .scheduler-controls {
         flex-direction: column;
         align-items: stretch;
@@ -1177,7 +1209,7 @@ textarea.form-control {
     
     .scheduler-row {
         grid-template-columns: 100px 720px; /* Sticky row header + 18 tracks * 40px */
-        min-height: 70px;
+        min-height: 60px;
     }
     
     .timeline-hours {
@@ -1209,12 +1241,16 @@ textarea.form-control {
         box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
     }
     
-    .car-row-name {
-        font-size: 0.82rem;
+    .scheduler-car-info .car-row-plate {
+        display: none !important; /* Hide plate and model details on mobile in scheduler tab */
+    }
+
+    .car-row-plate {
+        display: none !important;
     }
     
-    .car-row-plate {
-        font-size: 0.7rem;
+    .car-row-name {
+        font-size: 0.85rem;
     }
     
     .form-row {

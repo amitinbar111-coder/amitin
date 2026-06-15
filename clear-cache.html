@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניקוי מטמון</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #0b0f19; color: #fff; }
+        .status { margin: 20px 0; padding: 15px; border-radius: 8px; background: #1a1f2e; }
+        .ok { color: #4ade80; }
+        .err { color: #f87171; }
+        button { padding: 14px 28px; font-size: 1.1rem; background: #5f5af6; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧹 ניקוי מטמון האפליקציה</h1>
+    <div id="log"></div>
+    <button onclick="location.href='/'">→ חזור לאפליקציה</button>
+    <script>
+        const log = document.getElementById('log');
+        function addLog(msg, ok) {
+            const d = document.createElement('div');
+            d.className = 'status ' + (ok ? 'ok' : 'err');
+            d.textContent = msg;
+            log.appendChild(d);
+        }
+
+        async function clearAll() {
+            // 1. Unregister all service workers
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const reg of regs) {
+                    await reg.unregister();
+                }
+                addLog(`✅ ${regs.length} Service Workers הוסרו בהצלחה`, true);
+            } catch (e) {
+                addLog('⚠️ לא ניתן להסיר Service Workers: ' + e.message, false);
+            }
+
+            // 2. Clear all caches
+            try {
+                const keys = await caches.keys();
+                for (const key of keys) {
+                    await caches.delete(key);
+                }
+                addLog(`✅ ${keys.length} מטמונים נמחקו בהצלחה`, true);
+            } catch (e) {
+                addLog('⚠️ לא ניתן למחוק מטמונים: ' + e.message, false);
+            }
+
+            addLog('🎉 הניקוי הושלם! לחץ על הכפתור למטה לחזור לאפליקציה', true);
+        }
+
+        clearAll();
+    </script>
+</body>
+</html>

@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <!-- Google Identity Services client library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Supabase JS Client Library -->
@@ -134,16 +134,16 @@
                         <p id="calendar-subtitle" class="page-subtitle">צפה והזמן נסיעות בצי הרכב המשותף</p>
                     </div>
                     <button id="btn-open-booking-modal" class="btn btn-primary">
-                        <span>➕ הזמנה חדשה</span>
+                        <span>➕&nbsp;הזמנה&nbsp;חדשה</span>
                     </button>
                 </div>
 
                 <!-- בקרת בחירת תאריכים -->
                 <div class="scheduler-controls">
                     <div class="date-picker-nav">
-                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(-1)" title="יום קודם">◀</button>
+                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(-1)" title="יום קודם">▶</button>
                         <span id="current-date-display" class="date-display">יום שלישי, 9 יוני 2026</span>
-                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(1)" title="יום הבא">▶</button>
+                        <button class="btn btn-secondary btn-icon" onclick="App.changeDate(1)" title="יום הבא">◀</button>
                     </div>
                     <div class="date-input-wrapper">
                         <label for="datepicker" style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">בחר תאריך:</label>
@@ -302,6 +302,25 @@
                     <div style="display: flex; gap: 12px; margin-top: 25px;">
                         <button class="btn btn-primary" onclick="App.saveSupabaseSettings()">שמור הגדרות Supabase</button>
                         <button class="btn btn-secondary" onclick="App.clearSupabaseSettings()">אפס הגדרות Supabase</button>
+                    </div>
+                </div>
+
+                <!-- PWA & Install Settings Section -->
+                <div style="max-width: 600px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); padding: 30px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-top: 20px;">
+                    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 18px;">אפליקציית PWA והתקנה</h3>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+                        ניתן להתקין את האפליקציה ישירות על מסך הבית של המכשיר שלך כדי ליהנות מביצועים מהירים יותר, גישה לא מקוונת וחוויה של אפליקציה מקורית.
+                    </p>
+                    
+                    <div id="pwa-status-container" style="margin-bottom: 18px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                        <span>מצב הנוכחי:</span>
+                        <span id="pwa-status-badge" class="badge" style="background-color: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.78rem;">טוען...</span>
+                    </div>
+                    
+                    <div id="pwa-install-section" style="display: none;">
+                        <button id="pwa-install-btn" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 20px;">
+                            📲 התקן את האפליקציה במכשיר
+                        </button>
                     </div>
                 </div>
             </section>
@@ -633,8 +652,11 @@
     <script src="db.js"></script>
     <script src="app.js"></script>
     
-    <!-- רישום Service Worker עבור PWA -->
+    <!-- רישום Service Worker עבור PWA והתאמות מובייל -->
     <script>
+        let deferredPrompt = null;
+
+        // רישום Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -642,6 +664,75 @@
                     .catch(err => console.error('Service Worker registration failed:', err));
             });
         }
+
+        // זיהוי והצגת מצב התקנה PWA
+        function updatePWAStatus() {
+            const statusBadge = document.getElementById('pwa-status-badge');
+            const installSection = document.getElementById('pwa-install-section');
+            if (!statusBadge) return;
+
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+            if (isStandalone) {
+                statusBadge.textContent = 'מותקן במכשיר (Standalone)';
+                statusBadge.style.backgroundColor = '#10b981'; // Green success color
+                installSection.style.display = 'none';
+            } else if (deferredPrompt) {
+                statusBadge.textContent = 'ניתן להתקנה';
+                statusBadge.style.backgroundColor = '#f59e0b'; // Amber warning color
+                installSection.style.display = 'block';
+            } else {
+                statusBadge.textContent = 'פעיל בדפדפן (Web Mode)';
+                statusBadge.style.backgroundColor = 'var(--primary)';
+                installSection.style.display = 'none';
+            }
+        }
+
+        // האזנה לאירוע התקנת PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            updatePWAStatus();
+        });
+
+        // כפתור התקנה
+        document.addEventListener('DOMContentLoaded', () => {
+            const installBtn = document.getElementById('pwa-install-btn');
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (!deferredPrompt) return;
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    updatePWAStatus();
+                });
+            }
+            // עדכון ראשוני
+            setTimeout(updatePWAStatus, 1000);
+        });
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('App was installed successfully!');
+            deferredPrompt = null;
+            updatePWAStatus();
+            if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast('האפליקציה הותקנה בהצלחה במכשירך!', 'success');
+            }
+        });
+
+        // ניהול מצב מקוון / לא מקוון
+        window.addEventListener('online', () => {
+            if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast('החיבור לרשת חזר! האפליקציה מסונכרנת.', 'success');
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast('החיבור לרשת אבד. המערכת פועלת במצב לא מקוון (Offline).', 'warning');
+            }
+        });
     </script>
 </body>
 </html>
