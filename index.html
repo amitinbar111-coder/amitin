@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     
-    <link rel="stylesheet" href="style-v4.css">
+    <link rel="stylesheet" href="style.css">
     <!-- Google Identity Services client library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Supabase JS Client Library -->
@@ -650,89 +650,18 @@
 
     <!-- קישור לקובץ הלוגיקה הראשי -->
     <script src="db.js"></script>
-    <script src="app-v4.js"></script>
+    <script src="app.js"></script>
     
-    <!-- רישום Service Worker עבור PWA והתאמות מובייל -->
+    <!-- הסרת Service Worker כדי למנוע בעיות שמירת מטמון (Cache) -->
     <script>
-        let deferredPrompt = null;
-
-        // רישום Service Worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered successfully!', reg.scope))
-                    .catch(err => console.error('Service Worker registration failed:', err));
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister()
+                        .then(ok => console.log('Service Worker unregistered:', ok));
+                }
             });
         }
-
-        // זיהוי והצגת מצב התקנה PWA
-        function updatePWAStatus() {
-            const statusBadge = document.getElementById('pwa-status-badge');
-            const installSection = document.getElementById('pwa-install-section');
-            if (!statusBadge) return;
-
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-            if (isStandalone) {
-                statusBadge.textContent = 'מותקן במכשיר (Standalone)';
-                statusBadge.style.backgroundColor = '#10b981'; // Green success color
-                installSection.style.display = 'none';
-            } else if (deferredPrompt) {
-                statusBadge.textContent = 'ניתן להתקנה';
-                statusBadge.style.backgroundColor = '#f59e0b'; // Amber warning color
-                installSection.style.display = 'block';
-            } else {
-                statusBadge.textContent = 'פעיל בדפדפן (Web Mode)';
-                statusBadge.style.backgroundColor = 'var(--primary)';
-                installSection.style.display = 'none';
-            }
-        }
-
-        // האזנה לאירוע התקנת PWA
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            updatePWAStatus();
-        });
-
-        // כפתור התקנה
-        document.addEventListener('DOMContentLoaded', () => {
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) {
-                installBtn.addEventListener('click', async () => {
-                    if (!deferredPrompt) return;
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`User response to install prompt: ${outcome}`);
-                    deferredPrompt = null;
-                    updatePWAStatus();
-                });
-            }
-            // עדכון ראשוני
-            setTimeout(updatePWAStatus, 1000);
-        });
-
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('App was installed successfully!');
-            deferredPrompt = null;
-            updatePWAStatus();
-            if (typeof App !== 'undefined' && App.showToast) {
-                App.showToast('האפליקציה הותקנה בהצלחה במכשירך!', 'success');
-            }
-        });
-
-        // ניהול מצב מקוון / לא מקוון
-        window.addEventListener('online', () => {
-            if (typeof App !== 'undefined' && App.showToast) {
-                App.showToast('החיבור לרשת חזר! האפליקציה מסונכרנת.', 'success');
-            }
-        });
-
-        window.addEventListener('offline', () => {
-            if (typeof App !== 'undefined' && App.showToast) {
-                App.showToast('החיבור לרשת אבד. המערכת פועלת במצב לא מקוון (Offline).', 'warning');
-            }
-        });
     </script>
 </body>
 </html>
