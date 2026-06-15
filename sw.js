@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cs-fleet-v4';
+const CACHE_NAME = 'cs-fleet-v5';
 const ASSETS = [
     'index.html',
     'style-v4.css',
@@ -33,6 +33,22 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
     // Skip Supabase database and Google auth API requests from browser cache
     if (e.request.url.includes('supabase.co') || e.request.url.includes('accounts.google.com')) {
+        return;
+    }
+
+    // Network-First for HTML pages (like index.html or root page /)
+    if (e.request.mode === 'navigate' || (e.request.headers.get('accept') && e.request.headers.get('accept').includes('text/html'))) {
+        e.respondWith(
+            fetch(e.request).then((networkResponse) => {
+                if (networkResponse.status === 200) {
+                    const cacheCopy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(e.request, cacheCopy));
+                }
+                return networkResponse;
+            }).catch(() => {
+                return caches.match(e.request);
+            })
+        );
         return;
     }
 
