@@ -1227,50 +1227,65 @@ textarea.form-control {
         flex-direction: row !important;
     }
 
-    /* Make the timeline scheduler horizontally scrollable on mobile */
     .scheduler-container {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        direction: rtl !important;
+        position: relative !important;
     }
 
     .scheduler-header {
-        grid-template-columns: 100px 720px;
-        /* Sticky header + 18 columns * 40px */
+        display: flex !important;
+        flex-direction: row !important;
+        width: 820px;
+        direction: rtl !important;
     }
 
     .scheduler-row {
-        grid-template-columns: 100px 720px;
-        /* Sticky row header + 18 tracks * 40px */
+        display: flex !important;
+        flex-direction: row !important;
+        width: 820px;
         min-height: 60px;
+        direction: rtl !important;
     }
 
     .timeline-hours {
-        grid-template-columns: repeat(18, 40px);
+        display: grid !important;
+        grid-template-columns: repeat(18, 40px) !important;
+        width: 720px !important;
+        flex-shrink: 0 !important;
     }
 
     .scheduler-timeline-track {
-        grid-template-columns: repeat(18, 40px);
+        display: grid !important;
+        grid-template-columns: repeat(18, 40px) !important;
+        width: 720px !important;
+        flex-shrink: 0 !important;
     }
 
     /* Make the row headers sticky on the right for RTL scrolling */
     .scheduler-corner {
-        position: sticky;
-        right: 0;
-        background-color: var(--bg-tertiary);
-        z-index: 3;
-        border-left: 1px solid var(--border-color);
-        padding: 10px;
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+        position: sticky !important;
+        right: 0 !important;
+        width: 100px !important;
+        flex-shrink: 0 !important;
+        background-color: var(--bg-tertiary) !important;
+        z-index: 3 !important;
+        border-left: 1px solid var(--border-color) !important;
+        padding: 10px !important;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2) !important;
     }
 
     .scheduler-car-info {
-        position: sticky;
-        right: 0;
-        background-color: var(--bg-tertiary);
-        z-index: 3;
-        border-left: 1px solid var(--border-color);
-        padding: 8px;
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+        position: sticky !important;
+        right: 0 !important;
+        width: 100px !important;
+        flex-shrink: 0 !important;
+        background-color: var(--bg-tertiary) !important;
+        z-index: 3 !important;
+        border-left: 1px solid var(--border-color) !important;
+        padding: 8px !important;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2) !important;
     }
 
     .scheduler-car-info .car-row-plate {

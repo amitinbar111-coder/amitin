@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cs-fleet-v6';
+const CACHE_NAME = 'cs-fleet-v7';
 const ASSETS = [
     'index.html',
     'style.css',
