@@ -220,13 +220,30 @@ function getDefaultBookings() {
 
 // אתחול מסד הנתונים של LocalStorage
 function initLocalStorageDatabase() {
-    if (!localStorage.getItem(STORAGE_KEYS.VEHICLES)) {
+    try {
+        const vehicles = getFromStorage(STORAGE_KEYS.VEHICLES, []);
+        if (vehicles.length === 0) {
+            saveToStorage(STORAGE_KEYS.VEHICLES, DEFAULT_VEHICLES);
+        }
+    } catch (e) {
         saveToStorage(STORAGE_KEYS.VEHICLES, DEFAULT_VEHICLES);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+
+    try {
+        const users = getFromStorage(STORAGE_KEYS.USERS, []);
+        if (users.length === 0) {
+            saveToStorage(STORAGE_KEYS.USERS, DEFAULT_USERS);
+        }
+    } catch (e) {
         saveToStorage(STORAGE_KEYS.USERS, DEFAULT_USERS);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.BOOKINGS)) {
+
+    try {
+        const bookings = getFromStorage(STORAGE_KEYS.BOOKINGS, []);
+        if (bookings.length === 0) {
+            saveToStorage(STORAGE_KEYS.BOOKINGS, getDefaultBookings());
+        }
+    } catch (e) {
         saveToStorage(STORAGE_KEYS.BOOKINGS, getDefaultBookings());
     }
 }
