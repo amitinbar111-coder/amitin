@@ -652,13 +652,27 @@
     <script src="db.js"></script>
     <script src="app.js"></script>
     
-    <!-- הסרת Service Worker כדי למנוע בעיות שמירת מטמון (Cache) -->
+    <!-- רישום Service Worker עבור PWA עם מנגנון עדכון אוטומטי -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let registration of registrations) {
-                    registration.unregister()
-                        .then(ok => console.log('Service Worker unregistered:', ok));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registered successfully!', reg.scope);
+                        
+                        // Check for updates on load
+                        reg.update();
+                    })
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+
+            // מנגנון רענון אוטומטי כאשר ה-Service Worker החדש נכנס לפעולה
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    console.log('New Service Worker activated. Reloading page...');
+                    window.location.reload();
                 }
             });
         }
