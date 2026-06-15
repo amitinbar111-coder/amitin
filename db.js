@@ -379,6 +379,29 @@ const DB_SyncFallback = {
         return this.getBookings().filter(b => b.date === date);
     },
 
+    addBooking(bookingData) {
+        const bookings = this.getBookings();
+        const currentUser = this.getCurrentUser();
+        const newBooking = {
+            id: 'b-' + Date.now(),
+            vehicleId: bookingData.vehicleId,
+            userId: currentUser ? currentUser.id : 'unknown',
+            userName: currentUser ? currentUser.name : 'משתמש לא ידוע',
+            date: bookingData.date,
+            startTime: bookingData.startTime,
+            endTime: bookingData.endTime,
+            purpose: bookingData.purpose || ''
+        };
+        bookings.push(newBooking);
+        saveToStorage(STORAGE_KEYS.BOOKINGS, bookings);
+        return newBooking;
+    },
+
+    deleteBooking(id) {
+        const bookings = this.getBookings().filter(b => b.id !== id);
+        saveToStorage(STORAGE_KEYS.BOOKINGS, bookings);
+    },
+
     getCurrentUser() {
         return getFromStorage(STORAGE_KEYS.CURRENT_USER, null);
     },
