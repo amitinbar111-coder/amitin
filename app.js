@@ -412,7 +412,7 @@ const App = {
 
         let rowsHtml = '';
         vehicles.forEach(car => {
-            const hasAccess = currentUser.role === 'admin' || currentUser.permissions.includes(car.id);
+            const hasAccess = currentUser.role === 'admin' || (currentUser.permissions || []).includes(car.id);
             const accessClass = hasAccess ? '' : 'style="opacity: 0.55; position: relative;"';
             
             rowsHtml += `

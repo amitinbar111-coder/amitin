@@ -852,7 +852,7 @@ const DB = {
         const user = await this.getCurrentUser();
         if (!user) throw new Error('משתמש לא מחובר');
 
-        const hasAccess = user.role === 'admin' || user.permissions.includes(bookingData.vehicleId);
+        const hasAccess = user.role === 'admin' || (user.permissions || []).includes(bookingData.vehicleId);
         if (!hasAccess) {
             throw new Error('אין לך הרשאת גישה להזמנת רכב זה. אנא פנה למנהל המערכת.');
         }
