@@ -1026,7 +1026,7 @@ const App = {
             await this.renderAdminPermissions();
 
             const appUrl = window.location.origin + window.location.pathname;
-            const msgText = `הוזמנת להשתמש באפליקציית סידור הרכב של גרעין אדמה. לרישום, אנא כנס לקישור הבא והירשם עם המייל שלך:\n${appUrl}`;
+            const msgText = `הוזמנת להשתמש באפליקציית סידור הרכב של גרעין אדמה. לרישום, אנא כנס לקישור הבא והירשם עם המייל המורשה שלך: ${userData.email}\n\n${appUrl}`;
             
             document.getElementById('invite-message-text').value = msgText;
             this.openModal('invite-share-modal');
