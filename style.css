@@ -14,21 +14,21 @@
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
-    
+
     /* צבעי מותג וחיווי */
     --primary: #5f5af6;
     --primary-hover: #4e49df;
     --primary-light: rgba(95, 90, 246, 0.15);
     --accent: #06b6d4;
     --accent-light: rgba(6, 182, 212, 0.1);
-    
+
     --success: #10b981;
     --success-light: rgba(16, 185, 129, 0.12);
     --warning: #f59e0b;
     --warning-light: rgba(245, 158, 11, 0.12);
     --danger: #ef4444;
     --danger-light: rgba(239, 68, 68, 0.12);
-    
+
     /* משתנים מבניים */
     --radius-sm: 8px;
     --radius-md: 14px;
@@ -38,7 +38,7 @@
     --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --font-main: 'Rubik', 'Assistant', sans-serif;
-    
+
     /* אפקט גלאסמורפיזם */
     --glass-bg: rgba(19, 27, 46, 0.7);
     --glass-blur: blur(16px);
@@ -53,12 +53,12 @@
     --text-primary: #111827;
     --text-secondary: #4b5563;
     --text-muted: #9ca3af;
-    
+
     --primary: #4f46e5;
     --primary-hover: #3730a3;
     --primary-light: rgba(79, 70, 229, 0.1);
     --accent: #0891b2;
-    
+
     --glass-bg: rgba(255, 255, 255, 0.75);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.08);
@@ -84,7 +84,11 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-a, button, input, select, textarea {
+a,
+button,
+input,
+select,
+textarea {
     font-family: var(--font-main);
 }
 
@@ -124,6 +128,7 @@ a, button, input, select, textarea {
     box-shadow: 0 4px 12px rgba(95, 90, 246, 0.3);
     transition: var(--transition);
 }
+
 #btn-open-booking-modal:hover {
     background: linear-gradient(135deg, var(--primary-hover), var(--accent));
     box-shadow: 0 6px 15px rgba(95, 90, 246, 0.4);
@@ -164,7 +169,7 @@ a, button, input, select, textarea {
     justify-content: center;
     padding: 20px;
     background: radial-gradient(circle at 10% 20%, rgba(95, 90, 246, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
 }
 
 .login-card {
@@ -251,7 +256,8 @@ a, button, input, select, textarea {
     font-size: 0.85rem;
 }
 
-.divider::before, .divider::after {
+.divider::before,
+.divider::after {
     content: "";
     flex: 1;
     height: 1px;
@@ -554,7 +560,8 @@ main {
 
 .timeline-hours {
     display: grid;
-    grid-template-columns: repeat(18, 1fr); /* 06:00 to 24:00 (18 hours) */
+    grid-template-columns: repeat(18, 1fr);
+    /* 06:00 to 24:00 (18 hours) */
 }
 
 .timeline-hour-col {
@@ -1088,9 +1095,17 @@ textarea.form-control {
     border-right: 4px solid var(--primary);
 }
 
-.toast-success { border-right-color: var(--success); }
-.toast-error { border-right-color: var(--danger); }
-.toast-warning { border-right-color: var(--warning); }
+.toast-success {
+    border-right-color: var(--success);
+}
+
+.toast-error {
+    border-right-color: var(--danger);
+}
+
+.toast-warning {
+    border-right-color: var(--warning);
+}
 
 .toast-close {
     background: none;
@@ -1103,8 +1118,13 @@ textarea.form-control {
 
 /* אנימציות (Animations) */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes fadeInUp {
@@ -1112,6 +1132,7 @@ textarea.form-control {
         opacity: 0;
         transform: translateY(15px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1123,6 +1144,7 @@ textarea.form-control {
         transform: translateX(-100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -1143,17 +1165,17 @@ textarea.form-control {
         gap: 15px;
         align-items: stretch;
     }
-    
+
     .brand-section {
         justify-content: center;
     }
-    
+
     nav {
         justify-content: center;
         flex-wrap: wrap;
         gap: 6px;
     }
-    
+
     .nav-link {
         padding: 8px 12px;
         font-size: 0.88rem;
@@ -1161,18 +1183,18 @@ textarea.form-control {
         text-align: center;
         min-width: 80px;
     }
-    
+
     .user-profile-widget {
         justify-content: center;
         border-top: 1px solid var(--border-color);
         padding-top: 12px;
         margin-top: 5px;
     }
-    
+
     main {
         padding: 12px;
     }
-    
+
     .page-title-section {
         flex-direction: column;
         align-items: center;
@@ -1193,41 +1215,43 @@ textarea.form-control {
         border-radius: var(--radius-md);
         box-shadow: 0 4px 12px rgba(95, 90, 246, 0.25);
     }
-    
+
     .scheduler-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .date-picker-nav {
         justify-content: space-between;
         direction: rtl !important;
         flex-direction: row !important;
     }
-    
+
     /* Make the timeline scheduler horizontally scrollable on mobile */
     .scheduler-container {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     .scheduler-header {
-        grid-template-columns: 100px 720px; /* Sticky header + 18 columns * 40px */
+        grid-template-columns: 100px 720px;
+        /* Sticky header + 18 columns * 40px */
     }
-    
+
     .scheduler-row {
-        grid-template-columns: 100px 720px; /* Sticky row header + 18 tracks * 40px */
+        grid-template-columns: 100px 720px;
+        /* Sticky row header + 18 tracks * 40px */
         min-height: 60px;
     }
-    
+
     .timeline-hours {
         grid-template-columns: repeat(18, 40px);
     }
-    
+
     .scheduler-timeline-track {
         grid-template-columns: repeat(18, 40px);
     }
-    
+
     /* Make the row headers sticky on the right for RTL scrolling */
     .scheduler-corner {
         position: sticky;
@@ -1238,7 +1262,7 @@ textarea.form-control {
         padding: 10px;
         box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
     }
-    
+
     .scheduler-car-info {
         position: sticky;
         right: 0;
@@ -1248,19 +1272,20 @@ textarea.form-control {
         padding: 8px;
         box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
     }
-    
+
     .scheduler-car-info .car-row-plate {
-        display: none !important; /* Hide plate and model details on mobile in scheduler tab */
+        display: none !important;
+        /* Hide plate and model details on mobile in scheduler tab */
     }
 
     .car-row-plate {
         display: none !important;
     }
-    
+
     .car-row-name {
         font-size: 0.85rem;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
         gap: 0;
@@ -1273,12 +1298,12 @@ textarea.form-control {
         max-height: 90vh;
         overflow-y: auto;
     }
-    
+
     .booking-block {
         padding: 4px 6px;
         font-size: 0.72rem;
     }
-    
+
     .booking-block-time {
         font-size: 0.65rem;
     }
